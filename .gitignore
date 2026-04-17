@@ -20,7 +20,7 @@ logs/
 .vscode/
 
 *.env
-.env.*.local
+*.env.*.local
 
 .eslintcache
 .prettiercache

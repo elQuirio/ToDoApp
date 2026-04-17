@@ -156,6 +156,7 @@ export function LoginForm() {
     }
 
     return  (<form onSubmit={handleOnSubmit} className="login-form-wrapper">
+                <div className='cold-start-box'>This demo is hosted on Render’s free tier, so the server may take up to 30 seconds to respond on first load.</div>
                 {<div className={`server-error-box ${serverError && 'visible'}`}>{serverError}</div>}
                 {loginContent}
              </form>);
