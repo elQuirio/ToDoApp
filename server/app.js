@@ -4,12 +4,14 @@ import cors from 'cors';
 import bcrypt from "bcrypt";
 import crypto from 'crypto';
 import cookieParser from "cookie-parser";
+
 dotenv.config({ path: './dev.env'});
 
 import { clearTodos, getNewPosition, sortTodos, getPreferencesByUserID, patchPreferencesByUserId, manualResortTodos, getUserByEmail, registerNewUser, getUserByUserId, writeGetSortedTodos, getTodosByUserId, markAllTodosStatusByUserId, getMessagesByUserId, appendQuestionAnswer } from './db.js';
 //import { buildInstructionPrompt, buildLLMInput } from './services/promptBuilder.js';
 //import { askLLM } from './services/llmClient.js';
 import { generateChatReply } from './services/chatService.js';
+import { signToken, verifyToken } from './utils/auth.js';
 
 const allowedOrigins = [ 'http://localhost:5173', 'https://my-app.vercel.app' ]
 const PORT = process.env.PORT || 3000;
@@ -28,26 +30,45 @@ app.use(cors({origin: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', '
 /////////////////////////////////////// MIDDLEWARE ////////////////////////////////////////
 
 function requireAuth(req, res, next) {
-  
-  const authHeader = req.headers.authorization;
+  try {
+    let userId;
+    const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({message: "User not authenticated!"});
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({message: "User not authenticated!"});
+    }
+
+    const token = authHeader.split(' ')[1]
+    if (!token) {
+      return res.status(401).json({message: "User not authenticated!"});
+    }
+
+    try {
+      const payload = verifyToken(token);
+      userId = payload.userId;
+
+      if (!userId) {
+        return res.status(401).json({message: "User not authenticated!"});
+      }
+    }
+
+    catch (err) {
+      return res.status(401).json({message: "User not authenticated!"});
+    }
+
+    const user = getUserByUserId(userId);
+
+    if (!user) {
+      return res.status(401).json({message: "User not authenticated!"});
+    }
+
+    req.user = user;
+    req.token = token;
+    next();
+
+  } catch (e) {
+    return res.status(500).json({message: "Error checking authentication!"});
   }
-
-  const token = authHeader.split(' ')[1]
-  if (!token) {
-    return res.status(401).json({message: "User not authenticated!"});
-  }
-
-  const user = getUserByUserId(token);
-
-  if (!user) {
-    return res.status(401).json({message: "User not authenticated!"});
-  }
-
-  req.user = user;
-  next();
 };
 
 app.use('/api/todos', requireAuth);
@@ -68,8 +89,8 @@ app.post('/api/auth/register', async (req, res) => {
   }
 
   try {
+
     const userExists = getUserByEmail(email);
-  
     if (userExists) {
       return res.status(409).json({data: {isLogged:false}, message: "Email already registered!"});
     }
@@ -80,7 +101,10 @@ app.post('/api/auth/register', async (req, res) => {
     const savedUser = registerNewUser({email, password: hashedPwd, userId: userId});
 
     if (savedUser) {
-      return res.status(201).json({data: {isLogged: true, token: savedUser.userId, email: savedUser.email, userId: savedUser.userId }});
+      
+      const jwtToken = signToken(savedUser.userId);
+      return res.status(201).json({data: {isLogged: true, token: jwtToken, email: savedUser.email, userId: savedUser.userId }});
+
     } else {
       return res.status(500).json({data: {isLogged:false}, message: "Internal error saving user!"});
     }
@@ -102,8 +126,13 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const existingUser = getUserByEmail(email);
 
+    if (!existingUser) {
+      return res.status(401).json({data:{isLogged: false}, message: "User or password is wrong"});
+    }
+
     if (existingUser && await bcrypt.compare(password, existingUser.password)) {
-      return res.status(200).json({data: {isLogged: true, token: existingUser.userId, userId: existingUser.userId, email: email}});
+      const jwtToken = signToken(existingUser.userId);
+      return res.status(200).json({data: {isLogged: true, token: jwtToken, userId: existingUser.userId, email: email}});
     } else {
       return res.status(401).json({data:{isLogged: false}, message: "User or password is wrong"});
     }
@@ -116,6 +145,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/auth/checkAuth', (req, res) => {
   const authHeader = (req.headers.authorization);
+  let userId;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(200).json({data: {isLogged: false}, message: "Invalid or missing token!"});
@@ -123,7 +153,15 @@ app.get('/api/auth/checkAuth', (req, res) => {
 
   const token = (authHeader).split(' ')[1];
 
-  const userData = getUserByUserId(token);
+  try {
+    const payload = verifyToken(token);
+    userId = payload.userId;
+  }
+  catch (err) {
+    return res.status(200).json({data: {isLogged: false}, message: "Invalid or missing token!"});
+  }
+
+  const userData = getUserByUserId(userId);
 
   if(!userData) {
     return res.status(200).json({data: { isLogged: false}, message: "User not found!"});
