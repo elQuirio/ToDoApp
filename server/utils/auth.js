@@ -6,7 +6,7 @@ export function signToken(userId) {
     const JWT_SECRET = process.env.JWT_SECRET;
     if(!JWT_SECRET) throw new Error('Jwt secret is missing!');
 
-    return jwt.sign({userId}, JWT_SECRET, {expiresIn: '1m'});
+    return jwt.sign({userId}, JWT_SECRET, {expiresIn: '7d'});
 
 }
 
