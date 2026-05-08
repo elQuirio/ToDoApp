@@ -11,7 +11,7 @@ export function signToken(userId) {
 }
 
 export function verifyToken(token) {
-    if (!token) throw new Error('token is missing');
+    if (!token) throw new Error('Token is missing!');
 
     const JWT_SECRET = process.env.JWT_SECRET;
     if(!JWT_SECRET) throw new Error('Jwt secret is missing!');
