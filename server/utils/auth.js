@@ -6,12 +6,12 @@ export function signToken(userId) {
     const JWT_SECRET = process.env.JWT_SECRET;
     if(!JWT_SECRET) throw new Error('Jwt secret is missing!');
 
-    return jwt.sign({userId}, JWT_SECRET, {expiresIn: '7d'});
+    return jwt.sign({userId}, JWT_SECRET, {expiresIn: '1m'});
 
 }
 
 export function verifyToken(token) {
-    if (!token) throw new Error('token is missing');
+    if (!token) throw new Error('Token is missing!');
 
     const JWT_SECRET = process.env.JWT_SECRET;
     if(!JWT_SECRET) throw new Error('Jwt secret is missing!');

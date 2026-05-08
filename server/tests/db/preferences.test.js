@@ -1,4 +1,4 @@
-import { preferencesPath, getDefaultPreferences, patchPreferencesByUserId, getPreferencesByUserID } from '../db.js';
+import { preferencesPath, getDefaultPreferences, patchPreferencesByUserId, getPreferencesByUserID } from '../../db.js';
 import fs, { readFileSync } from 'fs';
 import crypto from "crypto";
 

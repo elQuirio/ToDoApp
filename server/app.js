@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === 'production';
 const sameSite = isProd ? 'none' : 'Lax';
 
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({origin: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
