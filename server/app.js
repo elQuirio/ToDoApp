@@ -1,20 +1,14 @@
-import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import bcrypt from "bcrypt";
 import crypto from 'crypto';
 import cookieParser from "cookie-parser";
 
-dotenv.config({ path: './dev.env'});
-
 import { clearTodos, getNewPosition, sortTodos, getPreferencesByUserID, patchPreferencesByUserId, manualResortTodos, getUserByEmail, registerNewUser, getUserByUserId, writeGetSortedTodos, getTodosByUserId, markAllTodosStatusByUserId, getMessagesByUserId, appendQuestionAnswer } from './db.js';
-//import { buildInstructionPrompt, buildLLMInput } from './services/promptBuilder.js';
-//import { askLLM } from './services/llmClient.js';
 import { generateChatReply } from './services/chatService.js';
 import { signToken, verifyToken } from './utils/auth.js';
 
 const allowedOrigins = [ 'http://localhost:5173', 'https://my-app.vercel.app' ]
-const PORT = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === 'production';
 const sameSite = isProd ? 'none' : 'Lax';
 
@@ -345,10 +339,5 @@ app.post('/api/chat/messages', async (req, res) => {
     console.log(err);
     return res.status(500).json({message: 'Error generating response'});
   }
-});
-
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
 
