@@ -1,7 +1,17 @@
 import { preferencesPath, getDefaultPreferences, patchPreferencesByUserId, getPreferencesByUserID } from '../../db.js';
 import fs, { readFileSync } from 'fs';
 import crypto from "crypto";
+import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper.js';
 
+let dbSnapshot;
+
+beforeEach(() => {
+  dbSnapshot = takeDbSnapshot();
+});
+
+afterEach(() => {
+  restoreDbSnapshot(dbSnapshot);
+});
 
 describe('patchPreferencesByUserId', () => {
     test('throws an error when userId is missing', () => {
@@ -9,16 +19,10 @@ describe('patchPreferencesByUserId', () => {
     });
 
     test('save and returns correct preference object', () => {
-        const originalPreferences = fs.readFileSync(preferencesPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const defaultPreferences = getDefaultPreferences(userId);
-            const testPreferences = patchPreferencesByUserId(userId, defaultPreferences);
-            expect(testPreferences).toEqual(defaultPreferences);
-        }
-        finally {
-            fs.writeFileSync(preferencesPath, originalPreferences);
-        }
+        const userId = crypto.randomUUID();
+        const defaultPreferences = getDefaultPreferences(userId);
+        const testPreferences = patchPreferencesByUserId(userId, defaultPreferences);
+        expect(testPreferences).toEqual(defaultPreferences);
     });
 });
 
@@ -36,17 +40,11 @@ describe('getPreferencesByUserID', () => {
     });
 
     test('returns correct preferences when user is found', () => {
-        const originalPreferences = fs.readFileSync(preferencesPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const partialPrefs = {sortBy: 'testSorting', sortDirection: 'testDirection', todoViewMode: 'testViewMode'};
-            patchPreferencesByUserId(userId, partialPrefs);
-            const testPreferences = getPreferencesByUserID(userId);
-            expect(testPreferences).toEqual({...getDefaultPreferences(userId), ...partialPrefs});
-        }
-        finally {
-            fs.writeFileSync(preferencesPath, originalPreferences);
-        }
+        const userId = crypto.randomUUID();
+        const partialPrefs = {sortBy: 'testSorting', sortDirection: 'testDirection', todoViewMode: 'testViewMode'};
+        patchPreferencesByUserId(userId, partialPrefs);
+        const testPreferences = getPreferencesByUserID(userId);
+        expect(testPreferences).toEqual({...getDefaultPreferences(userId), ...partialPrefs});
     })
 });
 

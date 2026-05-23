@@ -1,6 +1,17 @@
 import { todosPath, preferencesPath, readTodos, writeTodo, writeGetSortedTodos, writeAllTodos, clearTodos, getNewPosition, manualResortTodos, sortTodos, patchPreferencesByUserId } from '../../db.js';
 import fs, { readFileSync } from 'fs';
 import crypto from "crypto";
+import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper.js';
+
+let dbSnapshot;
+
+beforeEach(() => {
+  dbSnapshot = takeDbSnapshot();
+});
+
+afterEach(() => {
+  restoreDbSnapshot(dbSnapshot);
+});
 
 describe('readTodos', () => {
     test('returns an array', () => {
@@ -9,26 +20,20 @@ describe('readTodos', () => {
     });
 
     test('returns correct todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const testTodo = [{
-                    "userId": crypto.randomUUID(),
-                    "id": crypto.randomUUID(),
-                    "text": "test 1",
-                    "status": "active",
-                    "createdAt": 1773086379576,
-                    "updatedAt": 1773086379576,
-                    "toBeCompletedAt": 1773086879576,
-                    "position": 1
-                    }]
+        const testTodo = [{
+                "userId": crypto.randomUUID(),
+                "id": crypto.randomUUID(),
+                "text": "test 1",
+                "status": "active",
+                "createdAt": 1773086379576,
+                "updatedAt": 1773086379576,
+                "toBeCompletedAt": 1773086879576,
+                "position": 1
+                }]
 
-            fs.writeFileSync(todosPath, JSON.stringify(testTodo, null, 2));
-            const testReadTodos = readTodos();
-            expect(testReadTodos).toEqual(testTodo);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        fs.writeFileSync(todosPath, JSON.stringify(testTodo, null, 2));
+        const testReadTodos = readTodos();
+        expect(testReadTodos).toEqual(testTodo);
     });
 });
 
@@ -48,77 +53,64 @@ describe('writeTodo', () => {
     });
 
     test('correctly updates todo when it exists', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const todoId = crypto.randomUUID();
-            const toBeUpdatedTodoDb = [{
-                    "userId": userId,
-                    "id": todoId,
-                    "text": "test todo",
-                    "status": "active",
-                    "createdAt": 1773086379576,
-                    "updatedAt": 1773086379576,
-                    "toBeCompletedAt": 1773086879576,
-                    "position": 1
-                    }]
+        const userId = crypto.randomUUID();
+        const todoId = crypto.randomUUID();
+        const toBeUpdatedTodoDb = [{
+                "userId": userId,
+                "id": todoId,
+                "text": "test todo",
+                "status": "active",
+                "createdAt": 1773086379576,
+                "updatedAt": 1773086379576,
+                "toBeCompletedAt": 1773086879576,
+                "position": 1
+                }]
 
-            const updatedTodo = {
-                    "userId": userId,
-                    "id": todoId,
-                    "text": "new test todo updated",
-                    "status": "completed",
-                    "createdAt": 1773086379576,
-                    "updatedAt": 1773086379576,
-                    "toBeCompletedAt": 1773086879576,
-                    "position": 1
-                    }
+        const updatedTodo = {
+                "userId": userId,
+                "id": todoId,
+                "text": "new test todo updated",
+                "status": "completed",
+                "createdAt": 1773086379576,
+                "updatedAt": 1773086379576,
+                "toBeCompletedAt": 1773086879576,
+                "position": 1
+                }
 
-            fs.writeFileSync(todosPath, JSON.stringify(toBeUpdatedTodoDb, null, 2));
-            writeTodo(updatedTodo);
-            const testUpdatedTodoDb = JSON.parse(fs.readFileSync(todosPath, "utf-8"));
-            expect(testUpdatedTodoDb).toEqual([updatedTodo]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        fs.writeFileSync(todosPath, JSON.stringify(toBeUpdatedTodoDb, null, 2));
+        writeTodo(updatedTodo);
+        const testUpdatedTodoDb = JSON.parse(fs.readFileSync(todosPath, "utf-8"));
+        expect(testUpdatedTodoDb).toEqual([updatedTodo]);
     });
 
     test('appends todo when it does not exists', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const testTodoDb = [{
-                    "userId": crypto.randomUUID(),
-                    "id": crypto.randomUUID(),
-                    "text": "test todo",
-                    "status": "active",
-                    "createdAt": 1773086379576,
-                    "updatedAt": 1773086379576,
-                    "toBeCompletedAt": 1773086879576,
-                    "position": 1
-                    }]
+        const testTodoDb = [{
+                "userId": crypto.randomUUID(),
+                "id": crypto.randomUUID(),
+                "text": "test todo",
+                "status": "active",
+                "createdAt": 1773086379576,
+                "updatedAt": 1773086379576,
+                "toBeCompletedAt": 1773086879576,
+                "position": 1
+                }]
 
-            const newTodo = {
-                    "userId": crypto.randomUUID(),
-                    "id": crypto.randomUUID(),
-                    "text": "new test todo updated",
-                    "status": "completed",
-                    "createdAt": 1773086379576,
-                    "updatedAt": 1773086379576,
-                    "toBeCompletedAt": 1773086879576,
-                    "position": 1
-                    }
+        const newTodo = {
+                "userId": crypto.randomUUID(),
+                "id": crypto.randomUUID(),
+                "text": "new test todo updated",
+                "status": "completed",
+                "createdAt": 1773086379576,
+                "updatedAt": 1773086379576,
+                "toBeCompletedAt": 1773086879576,
+                "position": 1
+                }
 
-            fs.writeFileSync(todosPath, JSON.stringify(testTodoDb, null, 2));
-            writeTodo(newTodo);
-            const testUpdatedTodoDb = JSON.parse(fs.readFileSync(todosPath, "utf-8"));
-            testTodoDb.push(newTodo);
-            expect(testUpdatedTodoDb).toEqual(testTodoDb);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
-
+        fs.writeFileSync(todosPath, JSON.stringify(testTodoDb, null, 2));
+        writeTodo(newTodo);
+        const testUpdatedTodoDb = JSON.parse(fs.readFileSync(todosPath, "utf-8"));
+        testTodoDb.push(newTodo);
+        expect(testUpdatedTodoDb).toEqual(testTodoDb);
     });
 });
 
@@ -155,115 +147,8 @@ describe('writeGetSortedTodos', () => {
     
 
     test('correctly sorts todos alphabetically in ascending order', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        const originalPreferences = fs.readFileSync(preferencesPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const testTodoDb = [
-                    {
-                        userId,
-                        id: crypto.randomUUID(),
-                        text: 'zeta',
-                        status: 'active',
-                        createdAt: 3,
-                        updatedAt: 3,
-                        toBeCompletedAt: 3,
-                        position: 3
-                    },
-                    {
-                        userId,
-                        id: crypto.randomUUID(),
-                        text: 'alpha',
-                        status: 'active',
-                        createdAt: 1,
-                        updatedAt: 1,
-                        toBeCompletedAt: 1,
-                        position: 1
-                    }]
-
-            const newTodo = {
-                        userId,
-                        id: crypto.randomUUID(),
-                        text: 'beta',
-                        status: 'active',
-                        createdAt: 2,
-                        updatedAt: 2,
-                        toBeCompletedAt: 2,
-                        position: 2
-                    }
-
-            fs.writeFileSync(todosPath, JSON.stringify(testTodoDb, null, 2));
-            patchPreferencesByUserId(userId, {sortBy: 'alpha', sortDirection: 'asc'});
-
-            const sortedTodos = writeGetSortedTodos(newTodo, userId);
-            expect(sortedTodos.map((t) => t.text)).toEqual(['alpha','beta','zeta']);
-        } 
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-            fs.writeFileSync(preferencesPath, originalPreferences);
-        }
-    });
-
-
-      test('correctly sorts todos by position in descending order', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        const originalPreferences = fs.readFileSync(preferencesPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const testTodoDb = [
-                    {
-                        userId,
-                        id: crypto.randomUUID(),
-                        text: 'zeta',
-                        status: 'active',
-                        createdAt: 3,
-                        updatedAt: 3,
-                        toBeCompletedAt: 3,
-                        position: 3
-                    },
-                    {
-                        userId,
-                        id: crypto.randomUUID(),
-                        text: 'alpha',
-                        status: 'active',
-                        createdAt: 1,
-                        updatedAt: 1,
-                        toBeCompletedAt: 1,
-                        position: 1
-                    }]
-
-            const newTodo = {
-                        userId,
-                        id: crypto.randomUUID(),
-                        text: 'beta',
-                        status: 'active',
-                        createdAt: 2,
-                        updatedAt: 2,
-                        toBeCompletedAt: 2,
-                        position: 2
-                    }
-
-            fs.writeFileSync(todosPath, JSON.stringify(testTodoDb, null, 2));
-            patchPreferencesByUserId(userId, {sortBy: 'manual', sortDirection: 'desc'});
-
-            const sortedTodos = writeGetSortedTodos(newTodo, userId);
-            expect(sortedTodos.map((t) => t.position)).toEqual([3,2,1]);
-        } 
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-            fs.writeFileSync(preferencesPath, originalPreferences);
-        }
-    });
-
-});
-
-
-describe ('writeAllTodos', () => {
-    test('correctly writes a list of todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const testTodoDb = [
+        const userId = crypto.randomUUID();
+        const testTodoDb = [
                 {
                     userId,
                     id: crypto.randomUUID(),
@@ -283,8 +168,9 @@ describe ('writeAllTodos', () => {
                     updatedAt: 1,
                     toBeCompletedAt: 1,
                     position: 1
-                }, 
-                {
+                }]
+
+        const newTodo = {
                     userId,
                     id: crypto.randomUUID(),
                     text: 'beta',
@@ -293,15 +179,99 @@ describe ('writeAllTodos', () => {
                     updatedAt: 2,
                     toBeCompletedAt: 2,
                     position: 2
+                }
+
+        fs.writeFileSync(todosPath, JSON.stringify(testTodoDb, null, 2));
+        patchPreferencesByUserId(userId, {sortBy: 'alpha', sortDirection: 'asc'});
+
+        const sortedTodos = writeGetSortedTodos(newTodo, userId);
+        expect(sortedTodos.map((t) => t.text)).toEqual(['alpha','beta','zeta']);
+    });
+
+
+      test('correctly sorts todos by position in descending order', () => {
+        const userId = crypto.randomUUID();
+        const testTodoDb = [
+                {
+                    userId,
+                    id: crypto.randomUUID(),
+                    text: 'zeta',
+                    status: 'active',
+                    createdAt: 3,
+                    updatedAt: 3,
+                    toBeCompletedAt: 3,
+                    position: 3
+                },
+                {
+                    userId,
+                    id: crypto.randomUUID(),
+                    text: 'alpha',
+                    status: 'active',
+                    createdAt: 1,
+                    updatedAt: 1,
+                    toBeCompletedAt: 1,
+                    position: 1
                 }]
-            
-            writeAllTodos(testTodoDb);
-            const writtenTodos = readTodos();
-            expect(writtenTodos).toEqual(testTodoDb);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+
+        const newTodo = {
+                    userId,
+                    id: crypto.randomUUID(),
+                    text: 'beta',
+                    status: 'active',
+                    createdAt: 2,
+                    updatedAt: 2,
+                    toBeCompletedAt: 2,
+                    position: 2
+                }
+
+        fs.writeFileSync(todosPath, JSON.stringify(testTodoDb, null, 2));
+        patchPreferencesByUserId(userId, {sortBy: 'manual', sortDirection: 'desc'});
+
+        const sortedTodos = writeGetSortedTodos(newTodo, userId);
+        expect(sortedTodos.map((t) => t.position)).toEqual([3,2,1]);
+    });
+
+});
+
+
+describe ('writeAllTodos', () => {
+    test('correctly writes a list of todos', () => {
+        const userId = crypto.randomUUID();
+        const testTodoDb = [
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            },
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'alpha',
+                status: 'active',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }, 
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'beta',
+                status: 'active',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }]
+        
+        writeAllTodos(testTodoDb);
+        const writtenTodos = readTodos();
+        expect(writtenTodos).toEqual(testTodoDb);
         
     });
 });
@@ -309,146 +279,128 @@ describe ('writeAllTodos', () => {
 
 describe('clearTodos', () => {
     test('returns user active todos after clearing user completed todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const userTodo1 = {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                }
+        const userId = crypto.randomUUID();
+        const userTodo1 = {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            }
 
-            const userTodo2 =
-                {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'beta',
-                    status: 'completed',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                }
+        const userTodo2 =
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'beta',
+                status: 'completed',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }
 
-            const otherUserTodo = {
-                    userId: crypto.randomUUID(),
-                    id: crypto.randomUUID(),
-                    text: 'alpha',
-                    status: 'completed',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }
-            
-            writeAllTodos([userTodo1, userTodo2, otherUserTodo]);
-            const clearedTodos = clearTodos(userId, 'completed')
-            expect(clearedTodos).toEqual([userTodo1]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const otherUserTodo = {
+                userId: crypto.randomUUID(),
+                id: crypto.randomUUID(),
+                text: 'alpha',
+                status: 'completed',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }
+        
+        writeAllTodos([userTodo1, userTodo2, otherUserTodo]);
+        const clearedTodos = clearTodos(userId, 'completed')
+        expect(clearedTodos).toEqual([userTodo1]);
     });
 
     test('correctly save user active todos after clearing user completed todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const userTodo1 = {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                }
+        const userId = crypto.randomUUID();
+        const userTodo1 = {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            }
 
-            const userTodo2 =
-                {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'beta',
-                    status: 'completed',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                }
+        const userTodo2 =
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'beta',
+                status: 'completed',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }
 
-            const otherUserTodo = {
-                    userId: crypto.randomUUID(),
-                    id: crypto.randomUUID(),
-                    text: 'alpha',
-                    status: 'completed',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }
-            
-            writeAllTodos([userTodo1, userTodo2, otherUserTodo]);
-            clearTodos(userId, 'completed')
-            const testTodoDb = readTodos();
-            expect(testTodoDb).toEqual([userTodo1, otherUserTodo]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const otherUserTodo = {
+                userId: crypto.randomUUID(),
+                id: crypto.randomUUID(),
+                text: 'alpha',
+                status: 'completed',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }
+        
+        writeAllTodos([userTodo1, userTodo2, otherUserTodo]);
+        clearTodos(userId, 'completed')
+        const testTodoDb = readTodos();
+        expect(testTodoDb).toEqual([userTodo1, otherUserTodo]);
     });
     
     test('only clears user todos when clearing all todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const userTodo1 = {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                }
+        const userId = crypto.randomUUID();
+        const userTodo1 = {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            }
 
-            const userTodo2 =
-                {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'beta',
-                    status: 'completed',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                }
+        const userTodo2 =
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'beta',
+                status: 'completed',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }
 
-            const otherUserTodo = {
-                    userId: crypto.randomUUID(),
-                    id: crypto.randomUUID(),
-                    text: 'alpha',
-                    status: 'completed',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }
-            
-            writeAllTodos([userTodo1, userTodo2, otherUserTodo]);
-            clearTodos(userId, 'all');
-            const testTodoDb = readTodos();
-            expect(testTodoDb).toEqual([otherUserTodo]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const otherUserTodo = {
+                userId: crypto.randomUUID(),
+                id: crypto.randomUUID(),
+                text: 'alpha',
+                status: 'completed',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }
+        
+        writeAllTodos([userTodo1, userTodo2, otherUserTodo]);
+        clearTodos(userId, 'all');
+        const testTodoDb = readTodos();
+        expect(testTodoDb).toEqual([otherUserTodo]);
     });
 });
 
@@ -459,47 +411,41 @@ describe('getNewPosition', () => {
     });
 
     test('correctly return a new todo position', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const testTodos = [{
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                },
-                {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'beta',
-                    status: 'completed',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                },
-                {
-                    userId,
-                    id: crypto.randomUUID(),
-                    text: 'alpha',
-                    status: 'completed',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }]
-            
-            writeAllTodos(testTodos);
-            const newPosition = getNewPosition(userId);
-            expect(newPosition).toEqual(4);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const userId = crypto.randomUUID();
+        const testTodos = [{
+                userId,
+                id: crypto.randomUUID(),
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            },
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'beta',
+                status: 'completed',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            },
+            {
+                userId,
+                id: crypto.randomUUID(),
+                text: 'alpha',
+                status: 'completed',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }]
+        
+        writeAllTodos(testTodos);
+        const newPosition = getNewPosition(userId);
+        expect(newPosition).toEqual(4);
     });
 });
 
@@ -510,129 +456,117 @@ describe('manualResortTodos', () => {
     });
 
     test('correctly return sorted todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const idFrom = crypto.randomUUID();
-            const idTo = crypto.randomUUID();
-            const idStatic = crypto.randomUUID();
-            const userTodo1 = {
-                    userId,
-                    id: idFrom,
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                }
+        const userId = crypto.randomUUID();
+        const idFrom = crypto.randomUUID();
+        const idTo = crypto.randomUUID();
+        const idStatic = crypto.randomUUID();
+        const userTodo1 = {
+                userId,
+                id: idFrom,
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            }
 
-            const userTodo2 =
-                {
-                    userId,
-                    id: idStatic,
-                    text: 'beta',
-                    status: 'active',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                }
+        const userTodo2 =
+            {
+                userId,
+                id: idStatic,
+                text: 'beta',
+                status: 'active',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }
 
-            const userTodo3 =
-                {
-                    userId,
-                    id: idTo,
-                    text: 'gamma',
-                    status: 'active',
-                    createdAt: 4,
-                    updatedAt: 4,
-                    toBeCompletedAt: 4,
-                    position: 4
-                }
+        const userTodo3 =
+            {
+                userId,
+                id: idTo,
+                text: 'gamma',
+                status: 'active',
+                createdAt: 4,
+                updatedAt: 4,
+                toBeCompletedAt: 4,
+                position: 4
+            }
 
-            const otherUserTodo = {
-                    userId: crypto.randomUUID(),
-                    id: crypto.randomUUID(),
-                    text: 'alpha',
-                    status: 'active',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }
-            
-            writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
-            const sortedTodo = manualResortTodos(idFrom, idTo, userId);
-            expect(sortedTodo.map((t) => t.id)).toEqual([idStatic, idTo, idFrom]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const otherUserTodo = {
+                userId: crypto.randomUUID(),
+                id: crypto.randomUUID(),
+                text: 'alpha',
+                status: 'active',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }
+        
+        writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
+        const sortedTodo = manualResortTodos(idFrom, idTo, userId);
+        expect(sortedTodo.map((t) => t.id)).toEqual([idStatic, idTo, idFrom]);
     });
 
     test('correctly writes sorted todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const idFrom = crypto.randomUUID();
-            const idTo = crypto.randomUUID();
-            const idStatic = crypto.randomUUID();
-            const idOther = crypto.randomUUID();
-            const userTodo1 = {
-                    userId,
-                    id: idFrom,
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                }
+        const userId = crypto.randomUUID();
+        const idFrom = crypto.randomUUID();
+        const idTo = crypto.randomUUID();
+        const idStatic = crypto.randomUUID();
+        const idOther = crypto.randomUUID();
+        const userTodo1 = {
+                userId,
+                id: idFrom,
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            }
 
-            const userTodo2 =
-                {
-                    userId,
-                    id: idStatic,
-                    text: 'beta',
-                    status: 'completed',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                }
+        const userTodo2 =
+            {
+                userId,
+                id: idStatic,
+                text: 'beta',
+                status: 'completed',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }
 
-            const userTodo3 =
-                {
-                    userId,
-                    id: idTo,
-                    text: 'gamma',
-                    status: 'active',
-                    createdAt: 4,
-                    updatedAt: 4,
-                    toBeCompletedAt: 4,
-                    position: 4
-                }
+        const userTodo3 =
+            {
+                userId,
+                id: idTo,
+                text: 'gamma',
+                status: 'active',
+                createdAt: 4,
+                updatedAt: 4,
+                toBeCompletedAt: 4,
+                position: 4
+            }
 
-            const otherUserTodo = {
-                    userId: crypto.randomUUID(),
-                    id: idOther,
-                    text: 'alpha',
-                    status: 'active',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }
-            
-            writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
-            manualResortTodos(idFrom, idTo, userId);
-            const todosDb = readTodos();
-            expect(todosDb.map((t) => t.id)).toEqual([idTo, idFrom, idStatic, idOther]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const otherUserTodo = {
+                userId: crypto.randomUUID(),
+                id: idOther,
+                text: 'alpha',
+                status: 'active',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }
+        
+        writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
+        manualResortTodos(idFrom, idTo, userId);
+        const todosDb = readTodos();
+        expect(todosDb.map((t) => t.id)).toEqual([idTo, idFrom, idStatic, idOther]);
     });
 
 });
@@ -652,134 +586,119 @@ describe('sortTodos', () => {
     });
 
     test('correctly returns sorted todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const idTodo1 = crypto.randomUUID();
-            const idTodo2 = crypto.randomUUID();
-            const idTodo3 = crypto.randomUUID();
-            const idOther = crypto.randomUUID();
+        const userId = crypto.randomUUID();
+        const idTodo1 = crypto.randomUUID();
+        const idTodo2 = crypto.randomUUID();
+        const idTodo3 = crypto.randomUUID();
+        const idOther = crypto.randomUUID();
 
-            const userTodo1 = {
-                    userId,
-                    id: idTodo1,
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                }
+        const userTodo1 = {
+                userId,
+                id: idTodo1,
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            }
 
-            const userTodo2 =
-                {
-                    userId,
-                    id: idTodo2,
-                    text: 'beta',
-                    status: 'active',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                }
+        const userTodo2 =
+            {
+                userId,
+                id: idTodo2,
+                text: 'beta',
+                status: 'active',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }
 
-            const userTodo3 =
-                {
-                    userId,
-                    id: idTodo3,
-                    text: 'gamma',
-                    status: 'active',
-                    createdAt: 4,
-                    updatedAt: 4,
-                    toBeCompletedAt: 4,
-                    position: 4
-                }
+        const userTodo3 =
+            {
+                userId,
+                id: idTodo3,
+                text: 'gamma',
+                status: 'active',
+                createdAt: 4,
+                updatedAt: 4,
+                toBeCompletedAt: 4,
+                position: 4
+            }
 
-            const otherUserTodo = {
-                    userId: crypto.randomUUID(),
-                    id: idOther,
-                    text: 'alpha',
-                    status: 'active',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }
-            
-            writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
-            const sortedTodo = sortTodos('desc', 'alpha', userId);
-            expect(sortedTodo.map((t) => t.id)).toEqual([idTodo1, idTodo3, idTodo2]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const otherUserTodo = {
+                userId: crypto.randomUUID(),
+                id: idOther,
+                text: 'alpha',
+                status: 'active',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }
+        
+        writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
+        const sortedTodo = sortTodos('desc', 'alpha', userId);
+        expect(sortedTodo.map((t) => t.id)).toEqual([idTodo1, idTodo3, idTodo2]);
     });
 
     test('correctly writes sorted todos', () => {
-        const originalTodos = fs.readFileSync(todosPath, "utf-8");
-        try {
-            const userId = crypto.randomUUID();
-            const idTodo1 = crypto.randomUUID();
-            const idTodo2 = crypto.randomUUID();
-            const idTodo3 = crypto.randomUUID();
-            const idOther = crypto.randomUUID();
+        const userId = crypto.randomUUID();
+        const idTodo1 = crypto.randomUUID();
+        const idTodo2 = crypto.randomUUID();
+        const idTodo3 = crypto.randomUUID();
+        const idOther = crypto.randomUUID();
 
-            const userTodo1 = {
-                    userId,
-                    id: idTodo1,
-                    text: 'zeta',
-                    status: 'active',
-                    createdAt: 3,
-                    updatedAt: 3,
-                    toBeCompletedAt: 3,
-                    position: 3
-                }
+        const userTodo1 = {
+                userId,
+                id: idTodo1,
+                text: 'zeta',
+                status: 'active',
+                createdAt: 3,
+                updatedAt: 3,
+                toBeCompletedAt: 3,
+                position: 3
+            }
 
-            const userTodo2 =
-                {
-                    userId,
-                    id: idTodo2,
-                    text: 'beta',
-                    status: 'active',
-                    createdAt: 2,
-                    updatedAt: 2,
-                    toBeCompletedAt: 2,
-                    position: 2
-                }
+        const userTodo2 =
+            {
+                userId,
+                id: idTodo2,
+                text: 'beta',
+                status: 'active',
+                createdAt: 2,
+                updatedAt: 2,
+                toBeCompletedAt: 2,
+                position: 2
+            }
 
-            const userTodo3 =
-                {
-                    userId,
-                    id: idTodo3,
-                    text: 'gamma',
-                    status: 'active',
-                    createdAt: 4,
-                    updatedAt: 4,
-                    toBeCompletedAt: 4,
-                    position: 4
-                }
+        const userTodo3 =
+            {
+                userId,
+                id: idTodo3,
+                text: 'gamma',
+                status: 'active',
+                createdAt: 4,
+                updatedAt: 4,
+                toBeCompletedAt: 4,
+                position: 4
+            }
 
-            const otherUserTodo = {
-                    userId: crypto.randomUUID(),
-                    id: idOther,
-                    text: 'alpha',
-                    status: 'active',
-                    createdAt: 1,
-                    updatedAt: 1,
-                    toBeCompletedAt: 1,
-                    position: 1
-                }
-            
-            writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
-            sortTodos('desc', 'alpha', userId);
-            const todosDb = readTodos();
-            expect(todosDb.map((t) => t.id)).toEqual([idTodo1, idTodo3, idTodo2, idOther]);
-        }
-        finally {
-            fs.writeFileSync(todosPath, originalTodos);
-        }
+        const otherUserTodo = {
+                userId: crypto.randomUUID(),
+                id: idOther,
+                text: 'alpha',
+                status: 'active',
+                createdAt: 1,
+                updatedAt: 1,
+                toBeCompletedAt: 1,
+                position: 1
+            }
+        
+        writeAllTodos([userTodo1, userTodo2, userTodo3, otherUserTodo]);
+        sortTodos('desc', 'alpha', userId);
+        const todosDb = readTodos();
+        expect(todosDb.map((t) => t.id)).toEqual([idTodo1, idTodo3, idTodo2, idOther]);
     });
-
-
-
 });
