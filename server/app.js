@@ -114,7 +114,7 @@ app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({message: "User or password missing!"});
+    return res.status(400).json({data: {isLogged:false}, message: "User or password missing!"});
   }
 
   try {
