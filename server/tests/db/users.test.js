@@ -1,7 +1,16 @@
 import { usersPath, preferencesPath, getDefaultPreferences, getUserByEmail, readUsers, saveNewUser, getUserByUserId, registerNewUser, patchPreferencesByUserId, getPreferencesByUserID } from '../../db.js';
-import fs, { readFileSync } from 'fs';
 import crypto from "crypto";
+import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper.js';
 
+let dbSnapshot;
+
+beforeEach(() => {
+  dbSnapshot = takeDbSnapshot();
+});
+
+afterEach(() => {
+  restoreDbSnapshot(dbSnapshot);
+});
 
 describe('getUserByEmail', () => {
     test('throws an error if email is missing', () => {
@@ -14,20 +23,14 @@ describe('getUserByEmail', () => {
     });
 
     test('returns the correct user when it exists', () => {
-        const originalUsers = fs.readFileSync(usersPath, "utf-8");
-        try {
-            const newUser = {
-                userId: crypto.randomUUID(),
-                email: `${crypto.randomUUID()}@email.com`,
-                password: 'fakepassword'
-            }
-            saveNewUser(newUser);
-            const testUser = getUserByEmail(newUser.email);
-            expect(testUser).toEqual(newUser);
-        } 
-        finally{
-            fs.writeFileSync(usersPath, originalUsers);
+        const newUser = {
+            userId: crypto.randomUUID(),
+            email: `${crypto.randomUUID()}@email.com`,
+            password: 'fakepassword'
         }
+        saveNewUser(newUser);
+        const testUser = getUserByEmail(newUser.email);
+        expect(testUser).toEqual(newUser);
     })
 });
 
@@ -51,19 +54,13 @@ describe('saveNewUser', () => {
     });
 
     test('user is saved correctly', () => {
-        const originalUsers = fs.readFileSync(usersPath, "utf-8");
-        try {
-            const newUser = {
-                userId: crypto.randomUUID(),
-                email: `${crypto.randomUUID()}@email.com`,
-                password: 'fakepassword'
-            }
-            const testUser = saveNewUser(newUser);
-            expect(testUser).toEqual(newUser);
-        } 
-        finally{
-            fs.writeFileSync(usersPath, originalUsers);
+        const newUser = {
+            userId: crypto.randomUUID(),
+            email: `${crypto.randomUUID()}@email.com`,
+            password: 'fakepassword'
         }
+        const testUser = saveNewUser(newUser);
+        expect(testUser).toEqual(newUser);
     });
 
 });
@@ -75,20 +72,14 @@ describe ('getUserByUserId', () => {
     });
 
     test('returns the correct user when it exists', () => {
-        const originalUsers = fs.readFileSync(usersPath, "utf-8");
-        try {
-            const testUser = {
-                userId: crypto.randomUUID(),
-                email: `${crypto.randomUUID()}@email.com`,
-                password: 'fakepassword'
-            }
-            saveNewUser(testUser);
-            const newUser = getUserByUserId(testUser.userId);
-            expect(newUser).toEqual(testUser);
+        const testUser = {
+            userId: crypto.randomUUID(),
+            email: `${crypto.randomUUID()}@email.com`,
+            password: 'fakepassword'
         }
-        finally {
-            fs.writeFileSync(usersPath, originalUsers);
-        }
+        saveNewUser(testUser);
+        const newUser = getUserByUserId(testUser.userId);
+        expect(newUser).toEqual(testUser);
     })
 
     test("return null when user does't exist", () => {
@@ -115,20 +106,12 @@ describe('registerNewUser', () => {
     });
 
     test('returns the correct user when it is registered correctly', () => {
-        const originalUsers = fs.readFileSync(usersPath, "utf-8");
-        const originalPreferences = fs.readFileSync(preferencesPath, "utf-8");
-        try {
-            const testUser = {
-                userId: crypto.randomUUID(),
-                email: `${crypto.randomUUID()}@email.com`,
-                password: 'fakepassword'
-            }
-            const newUser = registerNewUser(testUser);
-            expect(newUser).toEqual(testUser);
+        const testUser = {
+            userId: crypto.randomUUID(),
+            email: `${crypto.randomUUID()}@email.com`,
+            password: 'fakepassword'
         }
-        finally {
-            fs.writeFileSync(usersPath, originalUsers);
-            fs.writeFileSync(preferencesPath, originalPreferences);
-        }
+        const newUser = registerNewUser(testUser);
+        expect(newUser).toEqual(testUser);
     })
 });
