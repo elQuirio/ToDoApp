@@ -1,5 +1,5 @@
 import { todosPath, preferencesPath, readTodos, writeTodo, writeGetSortedTodos, writeAllTodos, clearTodos, getNewPosition, manualResortTodos, sortTodos, patchPreferencesByUserId } from '../../db.js';
-import fs, { readFileSync } from 'fs';
+import fs from 'fs';
 import crypto from "crypto";
 import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper.js';
 

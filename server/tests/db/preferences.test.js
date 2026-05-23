@@ -1,5 +1,4 @@
 import { preferencesPath, getDefaultPreferences, patchPreferencesByUserId, getPreferencesByUserID } from '../../db.js';
-import fs, { readFileSync } from 'fs';
 import crypto from "crypto";
 import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper.js';
 

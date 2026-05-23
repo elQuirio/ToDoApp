@@ -1,7 +1,16 @@
 import { usersPath, preferencesPath, getDefaultPreferences, getUserByEmail, readUsers, saveNewUser, getUserByUserId, registerNewUser, patchPreferencesByUserId, getPreferencesByUserID } from '../../db.js';
-import fs, { readFileSync } from 'fs';
 import crypto from "crypto";
+import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper.js';
 
+let dbSnapshot;
+
+beforeEach(() => {
+  dbSnapshot = takeDbSnapshot();
+});
+
+afterEach(() => {
+  restoreDbSnapshot(dbSnapshot);
+});
 
 describe('getUserByEmail', () => {
     test('throws an error if email is missing', () => {
