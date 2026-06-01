@@ -3,6 +3,8 @@ import cors from 'cors';
 import bcrypt from "bcrypt";
 import crypto from 'crypto';
 import cookieParser from "cookie-parser";
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import { clearTodos, getNewPosition, sortTodos, getPreferencesByUserID, patchPreferencesByUserId, manualResortTodos, getUserByEmail, registerNewUser, getUserByUserId, writeGetSortedTodos, getTodosByUserId, markAllTodosStatusByUserId, getMessagesByUserId, appendQuestionAnswer } from './db.js';
 import { generateChatReply } from './services/chatService.js';
@@ -13,6 +15,7 @@ const isProd = process.env.NODE_ENV === 'production';
 const sameSite = isProd ? 'none' : 'Lax';
 
 export const app = express();
+app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({origin: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -68,6 +71,15 @@ function requireAuth(req, res, next) {
 app.use('/api/todos', requireAuth);
 app.use('/api/preferences', requireAuth);
 app.use('/api/chat', requireAuth);
+
+const authLimiter = rateLimit({
+  windowMs: 15*60*1000,
+  limit: process.env.NODE_ENV === 'test' ? 1000 : 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {message: 'Too many auth attempts, please try again later'},
+});
+app.use('/api/auth', authLimiter);
 
 
 ///////////////////////////////////////// LOGIN / REGISTRATION ///////////////////////////////////////////
