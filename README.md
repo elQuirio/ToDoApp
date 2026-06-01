@@ -1,5 +1,8 @@
 # ReactToDo
 
+[![CI](https://github.com/elQuirio/ToDoApp/actions/workflows/test.yml/badge.svg)](https://github.com/elQuirio
+  /ToDoApp/actions/workflows/test.yml)
+
 A full-stack todo application with user authentication, persistent preferences,
 drag-and-drop reordering, and an integrated LLM-powered chat assistant.
 
