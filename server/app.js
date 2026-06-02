@@ -9,8 +9,11 @@ import rateLimit from 'express-rate-limit';
 import { clearTodos, getNewPosition, sortTodos, getPreferencesByUserID, patchPreferencesByUserId, manualResortTodos, getUserByEmail, registerNewUser, getUserByUserId, writeGetSortedTodos, getTodosByUserId, markAllTodosStatusByUserId, getMessagesByUserId, appendQuestionAnswer } from './db.js';
 import { generateChatReply } from './services/chatService.js';
 import { signToken, verifyToken } from './utils/auth.js';
+import { validate } from './middleware/validate.js';
+import { registerSchema, loginSchema } from './schemas/auth.js';
+import { createTodoSchema, updateTodoSchema, resortSchema, reorderSchema, markAllParamsSchema, clearTodosQuerySchema } from './schemas/todos.js';
 
-const allowedOrigins = [ 'http://localhost:5173', 'https://my-app.vercel.app' ]
+const allowedOrigins = [ 'http://localhost:5173', 'https://todo-manager-beige.vercel.app' ]
 const isProd = process.env.NODE_ENV === 'production';
 const sameSite = isProd ? 'none' : 'Lax';
 
@@ -18,7 +21,7 @@ export const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({origin: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+app.use(cors({origin: allowedOrigins, methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
@@ -84,15 +87,8 @@ app.use('/api/auth', authLimiter);
 
 ///////////////////////////////////////// LOGIN / REGISTRATION ///////////////////////////////////////////
 
-app.post('/api/auth/register', async (req, res) => {
-  const {email, password, confirmPassword} = req.body;
-  
-  if (!email || !password || !confirmPassword) {
-    return res.status(400).json({data: {isLogged:false}, message: "Missing user, password or confirmPassword!"});
-  }
-  if (password !== confirmPassword) {
-    return res.status(400).json({data: {isLogged:false}, message: "Password does not matches confirmPassword!"});
-  }
+app.post('/api/auth/register', validate(registerSchema), async (req, res) => {
+  const {email, password} = req.body;
 
   try {
 
@@ -122,12 +118,8 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', validate(loginSchema), async (req, res) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({data: {isLogged:false}, message: "User or password missing!"});
-  }
 
   try {
     const existingUser = getUserByEmail(email);
@@ -192,14 +184,11 @@ app.get("/api/todos", (req, res) => {
 });
 
 // PATCH
-app.patch("/api/todos/resort", (req, res) => {
+app.patch("/api/todos/resort", validate(resortSchema), (req, res) => {
   const sortDirection = req.body.sortDirection;
   const sortBy = req.body.sortBy;
   const userId = req.user.userId;
 
-  if (!sortDirection || !sortBy) {
-    return res.status(400).json({message: "Missing sorting criteria"});
-  }
   try {
     const todos = sortTodos(sortDirection, sortBy, userId);
     return res.status(200).send({data: todos});
@@ -211,12 +200,9 @@ app.patch("/api/todos/resort", (req, res) => {
 });
 
 // PATCH
-app.patch("/api/todos/reorder", (req, res) => {
+app.patch("/api/todos/reorder", validate(reorderSchema), (req, res) => {
   const userId = req.user.userId;
   const { fromId, toId } = req.body;
-  if (!fromId || !toId) {
-    return res.status(400).json({message: 'Missing from/to id'});
-  }
 
   try{
     const sortedTodos = manualResortTodos(fromId, toId, userId);
@@ -228,13 +214,10 @@ app.patch("/api/todos/reorder", (req, res) => {
 
 
 //PATCH
-app.patch("/api/todos/mark-all/:status", (req, res) => {
+app.patch("/api/todos/mark-all/:status", validate(markAllParamsSchema), (req, res) => {
   const { status } = req.params;
   const userId = req.user.userId;
 
-  if (!status) {
-    return res.status(400).json({message: "Missing status"});
-  }
   try {
     const updatedTodos = markAllTodosStatusByUserId(userId, status);
     return res.status(200).json({data: updatedTodos});
@@ -247,7 +230,7 @@ app.patch("/api/todos/mark-all/:status", (req, res) => {
 
 
 // POST
-app.post("/api/todos", (req, res) => {
+app.post("/api/todos", validate(createTodoSchema), (req, res) => {
   const userId = req.user.userId;
   const todo = { userId, ...req.body};
   todo.position = getNewPosition(userId);
@@ -262,12 +245,10 @@ app.post("/api/todos", (req, res) => {
 
 
 // DELETE
-app.delete("/api/todos", (req, res) => {
+app.delete("/api/todos", validate(clearTodosQuerySchema), (req, res) => {
   const userId = req.user.userId;
   const { status } = req.query;
-  if (!status) {
-    return res.status(400).json({message: "Missing status"})
-  }
+
   try {
     const todos = clearTodos(userId, status);
     return res.status(200).json({data: todos});
@@ -278,12 +259,11 @@ app.delete("/api/todos", (req, res) => {
 });
 
 // PATCH
-app.patch("/api/todos/:id", (req, res) => {
+app.patch("/api/todos/:id", validate(updateTodoSchema), (req, res) => {
   const userId = req.user.userId;
   const todoId = req.params.id;
   const todo = {userId, ...req.body, id: todoId};
-  
-  if (!todoId) return res.status(400).json({message: 'Missing todo Id'});
+
   try {
     const todos = writeGetSortedTodos(todo, userId);
     return res.status(200).json({data: todos});
