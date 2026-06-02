@@ -10,8 +10,7 @@ export const messagesPath = path.resolve("./src/assets/messages.json");
 /////////////////// TODOS ////////////////////////
 export const readTodos = () => {
     const data = fs.readFileSync(todosPath, "utf-8");
-    const userData = JSON.parse(data);
-    return userData ? userData : [];
+    return data.trim() ? JSON.parse(data) : [];
 };
 
 export const writeTodo = (todo) => {
@@ -136,7 +135,7 @@ export function sortTodos(sortDirection, sortBy, userId) {
 
 export function readPreferences() {
     const pref = fs.readFileSync(preferencesPath, "utf-8");
-    return JSON.parse(pref);
+    return pref.trim() ? JSON.parse(pref) : [];
 };
 
 

@@ -85,7 +85,7 @@ describe('POST /api/auth/register', () => {
 
     const response = await request(app).post('/api/auth/register').send({password, confirmPassword});
     expect(response.status).toBe(400);
-    expect(response.body.data.isLogged).toBe(false);
+    expect(response.body.errors).toEqual(expect.arrayContaining([expect.objectContaining({path: 'email'})]));
   });
 
   test('returns 400 if password is missing', async () => {
@@ -95,7 +95,7 @@ describe('POST /api/auth/register', () => {
 
     const response = await request(app).post('/api/auth/register').send({email});
     expect(response.status).toBe(400);
-    expect(response.body.data.isLogged).toBe(false);
+    expect(response.body.errors).toEqual(expect.arrayContaining([expect.objectContaining({path: 'password'})]));
   });
 
   test("returns 400 if passwords don't match", async () => {
@@ -105,7 +105,7 @@ describe('POST /api/auth/register', () => {
 
     const response = await request(app).post('/api/auth/register').send({email, password, confirmPassword});
     expect(response.status).toBe(400);
-    expect(response.body.data.isLogged).toBe(false);
+    expect(response.body.errors).toEqual(expect.arrayContaining([expect.objectContaining({path: 'confirmPassword'})]));
   });
 
   test('returns 409 if user already exists', async () => {
@@ -141,7 +141,7 @@ describe('POST /api/auth/login', () => {
 
     const response = await request(app).post('/api/auth/login').send({password});
     expect(response.status).toBe(400);
-    expect(response.body.data.isLogged).toBe(false);
+    expect(response.body.errors).toEqual(expect.arrayContaining([expect.objectContaining({path: 'email'})]));
   });
 
   test('returns 400 if password is missing', async () => {
@@ -149,7 +149,7 @@ describe('POST /api/auth/login', () => {
 
     const response = await request(app).post('/api/auth/login').send({email});
     expect(response.status).toBe(400);
-    expect(response.body.data.isLogged).toBe(false);
+    expect(response.body.errors).toEqual(expect.arrayContaining([expect.objectContaining({path: 'password'})]));
   });
 
   test("returns 401 if user doesn't exist", async () => {
