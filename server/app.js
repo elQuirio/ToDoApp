@@ -12,6 +12,8 @@ import { signToken, verifyToken } from './utils/auth.js';
 import { validate } from './middleware/validate.js';
 import { registerSchema, loginSchema } from './schemas/auth.js';
 import { createTodoSchema, updateTodoSchema, resortSchema, reorderSchema, markAllParamsSchema, clearTodosQuerySchema } from './schemas/todos.js';
+import { updatePreferenceSchema } from './schemas/preferences.js';
+import { sendMessageSchema } from './schemas/chat.js';
 
 const allowedOrigins = [ 'http://localhost:5173', 'https://todo-manager-beige.vercel.app' ]
 const isProd = process.env.NODE_ENV === 'production';
@@ -214,7 +216,7 @@ app.patch("/api/todos/reorder", validate(reorderSchema), (req, res) => {
 
 
 //PATCH
-app.patch("/api/todos/mark-all/:status", validate(markAllParamsSchema), (req, res) => {
+app.patch("/api/todos/mark-all/:status", validate(markAllParamsSchema, 'params'), (req, res) => {
   const { status } = req.params;
   const userId = req.user.userId;
 
@@ -245,7 +247,7 @@ app.post("/api/todos", validate(createTodoSchema), (req, res) => {
 
 
 // DELETE
-app.delete("/api/todos", validate(clearTodosQuerySchema), (req, res) => {
+app.delete("/api/todos", validate(clearTodosQuerySchema, 'query'), (req, res) => {
   const userId = req.user.userId;
   const { status } = req.query;
 
@@ -277,7 +279,7 @@ app.patch("/api/todos/:id", validate(updateTodoSchema), (req, res) => {
 
 ///////////////////////////////////////// PREFERENCES ///////////////////////////////////////////
 
-app.patch('/api/preferences', (req, res) => {
+app.patch('/api/preferences', validate(updatePreferenceSchema), (req, res) => {
   const userId = req.user.userId;
   try {
     const preferences = patchPreferencesByUserId(userId, req.body);
@@ -311,7 +313,7 @@ app.get('/api/chat/messages', (req, res) => {
   }
 });
 
-app.post('/api/chat/messages', async (req, res) => {
+app.post('/api/chat/messages', validate(sendMessageSchema), async (req, res) => {
   const userId = req.user.userId;
   const messagePayload = req.body.message;
   try {
