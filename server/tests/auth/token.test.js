@@ -1,7 +1,6 @@
-import { signToken, verifyToken } from "../../utils/auth";
+import { signToken, verifyToken } from "../../utils/auth.js";
 import jwt from 'jsonwebtoken';
 import fs, { readFileSync } from 'fs';
-import path from "path";
 import { sign } from "crypto";
 
 

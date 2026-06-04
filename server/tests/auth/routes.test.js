@@ -1,7 +1,7 @@
 import request from 'supertest';
-import { app } from "../../app";
-import { signToken } from '../../utils/auth';
-import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper';
+import { app } from "../../app.js";
+import { signToken } from '../../utils/auth.js';
+import { takeDbSnapshot, restoreDbSnapshot } from '../helpers/testDbHelper.js';
 
 let dbSnapshot;
 
