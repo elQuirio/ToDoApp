@@ -1,4 +1,4 @@
-import { usersPath, todosPath, preferencesPath, messagesPath } from '../../db';
+import { usersPath, todosPath, preferencesPath, messagesPath } from '../../db.js';
 import fs from 'fs';
 
 export function takeDbSnapshot() {
