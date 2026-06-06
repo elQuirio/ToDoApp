@@ -1,9 +1,8 @@
 import { Router } from 'express';
 
-import { getNewPosition, sortTodos, manualResortTodos, writeGetSortedTodos, getTodosByUserId, markAllTodosStatusByUserId, clearTodos } from '../db.js';
+import { getNewPosition, sortTodos, manualResortTodos, writeGetSortedTodos, getTodosByUserId, markAllTodosStatusByUserId, clearTodos, getPreferencesByUserID } from '../db.js';
 import { createTodoSchema, updateTodoSchema, resortSchema, reorderSchema, markAllParamsSchema, clearTodosQuerySchema } from '../schemas/todos.js';
 import { validate } from '../middleware/validate.js';
-
 
 export const todosRoutes = Router();
 
@@ -36,7 +35,9 @@ todosRoutes.patch("/reorder", validate(reorderSchema), (req, res) => {
   const { fromId, toId } = req.body;
 
   try{
-    const sortedTodos = manualResortTodos(fromId, toId, userId);
+    manualResortTodos(fromId, toId, userId);
+    const preferences = getPreferencesByUserID(userId);
+    const sortedTodos = sortTodos(preferences.sortDirection, 'manual', userId);
     return res.status(200).json({data: sortedTodos});
   } catch (err) {
     return res.status(500).json({message: "Error reordering todos"});
