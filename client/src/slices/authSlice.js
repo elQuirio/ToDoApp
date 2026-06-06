@@ -33,9 +33,9 @@ const authSlice = createSlice({
             state.error = action.payload;
         })
         .addCase(loginUser.fulfilled, (state,action) => {
-            state.user = action.payload.data.email;
-            state.userId = action.payload.data.userId;
-            state.isLogged = action.payload.data.isLogged;
+            state.user = action.payload.data?.email;
+            state.userId = action.payload.data?.userId;
+            state.isLogged = action.payload.data?.isLogged ?? false;
             state.loading = false;
             state.error = null;
         })
@@ -51,9 +51,9 @@ const authSlice = createSlice({
             state.error = null;
         })
         .addCase(checkAuth.fulfilled, (state, action) => {
-            if (action.payload.data.isLogged) {
-                state.user = action.payload.data.email;
-                state.userId = action.payload.data.userId;
+            if (action.payload.data?.isLogged) {
+                state.user = action.payload.data?.email;
+                state.userId = action.payload.data?.userId;
                 state.isLogged = true;
                 state.loading = false;
                 state.error = null;
@@ -80,8 +80,8 @@ const authSlice = createSlice({
             state.error = action.payload;
         })
         .addCase(registerUser.fulfilled, (state, action) => {
-            state.user = action.payload.data.email;
-            state.userId = action.payload.data.userId;
+            state.user = action.payload.data?.email;
+            state.userId = action.payload.data?.userId;
             state.isLogged = true;
             state.loading = false;
             state.error = null;
@@ -95,7 +95,7 @@ const authSlice = createSlice({
             state.error = action.payload;
         })
         .addCase(logoutUser.fulfilled, (state, action) => {
-            if (action.payload.data.isLogged === false) {
+            if (action.payload.data?.isLogged === false) {
                 state.user = null;
                 state.userId = null;
                 state.isLogged = false;

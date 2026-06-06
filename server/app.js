@@ -3,7 +3,7 @@ import cors from 'cors';
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 
-import { authLimiter } from './middleware/authLimiter.js';
+import { authLimiter, chatLimiter, generalLimiter } from './middleware/rateLimiters.js';
 import { requireAuth } from './middleware/requireAuth.js';
 import { authRoutes } from './routes/auth.js';
 import { todosRoutes } from './routes/todos.js';
@@ -21,12 +21,16 @@ app.use(cors({origin: allowedOrigins, methods: ['GET', 'POST', 'PUT', 'DELETE', 
 app.use(express.json());
 app.use(cookieParser());
 
+app.use('/api', generalLimiter);
+app.use('/api/chat', chatLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', authLimiter);
+
 app.use('/api/todos', requireAuth);
 app.use('/api/preferences', requireAuth);
 app.use('/api/chat', requireAuth);
 
 
-app.use('/api/auth', authLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/todos', todosRoutes);
