@@ -689,6 +689,12 @@ body.light .login-form-button.main-button:hover {
   align-items: center;
 }
 
+.quick-actions-button.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .quick-actions-button.active.extended {
   background: var(--bt-active);
 }

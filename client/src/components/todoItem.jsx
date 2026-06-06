@@ -41,15 +41,16 @@ export function TodoItem({todoData}) {
         }
     }
     
-    function handleOnDrop(e, id) {
+    async function handleOnDrop(e, id) {
         if (status !== 'completed') {
             e.preventDefault();
             const fromId = e.dataTransfer.getData('text/plain');
             const toId = id;
             if (!fromId || fromId === toId) return;
             
+            await dispatch(updatePreferences({sortBy: "manual"}));
             dispatch(dragAndDropReorderTodos({fromId, toId}));
-            dispatch(updatePreferences({sortBy: "manual"}));
+            
         }
     }
 
