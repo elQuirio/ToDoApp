@@ -7,6 +7,7 @@ import { selectMainView } from '../selectors/preferencesSelector';
 import { selectActiveTodos, selectCompletedTodos, selectOverdueTodos } from '../selectors/todoSelectors';
 import { SortMethodSwitch } from '../components/sortMethodSwitch';
 import { Search, Minimize2, ArrowUpNarrowWide, ArrowDownNarrowWide, BotMessageSquare } from "lucide-react";
+import { CHAT_ENABLED } from '../config/api.js';
 
 export function TodoStatusBar({ searchString }) {
     const activeTodos = useSelector(selectActiveTodos);
@@ -17,6 +18,7 @@ export function TodoStatusBar({ searchString }) {
     const currentSortBy = useSelector(selectSortBy);
     const searchButtonActive = useSelector(selectSearchBtnToggled);
     const mainViewMode = useSelector(selectMainView);
+    const isChatEnabled = CHAT_ENABLED;
 
     let sortComponent = '';
 

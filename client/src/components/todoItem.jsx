@@ -48,9 +48,8 @@ export function TodoItem({todoData}) {
             const toId = id;
             if (!fromId || fromId === toId) return;
             
-            await dispatch(updatePreferences({sortBy: "manual"}));
-            dispatch(dragAndDropReorderTodos({fromId, toId}));
-            
+            await dispatch(dragAndDropReorderTodos({fromId, toId}));
+            dispatch(updatePreferences({sortBy: "manual"}));
         }
     }
 
