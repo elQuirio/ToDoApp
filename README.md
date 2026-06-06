@@ -9,7 +9,7 @@ drag-and-drop reordering, and an integrated LLM-powered chat assistant.
 Built as a portfolio project to practice the full React + Node stack end-to-end:
 state management, REST API design, JWT auth, and external API integration.
 
-> Demo video coming soon.
+https://github.com/user-attachments/assets/0d5dd96f-59f3-4fdc-9a4b-7b9c82c0dcc0
 
 ## Features
 
