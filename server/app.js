@@ -13,6 +13,7 @@ import { chatRoutes } from './routes/chat.js';
 const allowedOrigins = [ 'http://localhost:5173', 'https://todo-manager-beige.vercel.app' ]
 
 export const app = express();
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({origin: allowedOrigins, methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
